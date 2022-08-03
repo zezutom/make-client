@@ -1,11 +1,8 @@
 package com.tomaszezula.make.common
 
 import com.tomaszezula.make.common.config.MakeConfig
-import com.tomaszezula.make.common.model.AuthToken
-import com.tomaszezula.make.common.model.Blueprint
+import com.tomaszezula.make.common.model.*
 import com.tomaszezula.make.common.model.Blueprint.Module
-import com.tomaszezula.make.common.model.Scenario
-import com.tomaszezula.make.common.model.UpdateResult
 import com.tomaszezula.make.common.model.exception.BadRequestException
 import com.tomaszezula.make.common.model.exception.NotFoundException
 import com.tomaszezula.make.common.model.exception.ServerErrorException
@@ -24,14 +21,17 @@ class MakeApiImpl(
 
     companion object {
         const val BlueprintKey = "blueprint"
-        const val SchedulingKey = "scheduling"
+        const val FlowKey = "flow"
         const val FolderIdKey = "folderId"
-        const val TeamIdKey = "teamId"
+        const val IdKey = "id"
+        const val ModuleKey = "module"
+        const val NameKey = "name"
+        const val ResponseKey = "response"
+        const val SchedulingKey = "scheduling"
+        const val ScenarioKey = "scenario"
         const val Separator = ""
-
-        object SetModuleData {
-            const val ContentField = "content"
-        }
+        const val TeamIdKey = "teamId"
+        const val UpdatedKey = "module"
     }
 
     private val createScenarioUrl = "${config.baseUrl}/scenarios?confirmed=true"
@@ -41,21 +41,29 @@ class MakeApiImpl(
         teamId: Int,
         folderId: Int,
         blueprintJson: String,
-        schedulingInterval: Int
-    ): Result<Scenario> {
-        TODO("Not yet implemented")
-    }
+        scheduling: Scheduling
+    ): Result<Scenario> =
+        post(token, createScenarioUrl, buildJsonObject {
+            put(BlueprintKey, blueprintJson.lineSequence().map { it.trim() }.joinToString(Separator))
+            put(SchedulingKey, scheduling.toJson())
+            put(FolderIdKey, folderId)
+            put(TeamIdKey, teamId)
+        }) { response ->
+            jsonObject(response, ResponseKey, ScenarioKey)?.let { scenario ->
+                scenario[IdKey]?.jsonPrimitive?.content?.let { id ->
+                    Scenario(id.toInt())
+                }
+            }
+        }
 
     override suspend fun getBlueprint(token: AuthToken, scenarioId: Int): Result<Blueprint> =
-        get(token, "${config.baseUrl}/scenarios/$scenarioId/blueprint") { response ->
-            jsonObject(response, "response", "blueprint")?.let { blueprint ->
-                blueprint["name"]?.jsonPrimitive?.content?.let { name ->
-                    Blueprint(
-                        name,
-                        blueprint["flow"]?.jsonArray?.mapNotNull { it.toModule() } ?: emptyList(),
-                        blueprint.toString()
-                    )
-                }
+        getBlueprintJson(token, scenarioId) { blueprint ->
+            blueprint[NameKey]?.jsonPrimitive?.content?.let { name ->
+                Blueprint(
+                    name,
+                    blueprint[FlowKey]?.jsonArray?.mapNotNull { it.toModule() } ?: emptyList(),
+                    blueprint.toString()
+                )
             }
         }
 
@@ -65,13 +73,21 @@ class MakeApiImpl(
         moduleId: Int,
         fieldName: String,
         data: Any
-    ): Result<UpdateResult> {
-        TODO("Not yet implemented")
-    }
+    ): Result<UpdateResult> =
+        put(token, "${config.baseUrl}/scenarios/$scenarioId/data", buildJsonObject {
+            put(moduleId.toString(), json.encodeToJsonElement(data))
+        }) {
+            UpdateResult(it[UpdatedKey]?.jsonPrimitive?.boolean ?: false)
+        }
+
+    private suspend fun <T> getBlueprintJson(token: AuthToken, scenarioId: Int, f: (JsonObject) -> T?): Result<T> =
+        get(token, "${config.baseUrl}/scenarios/$scenarioId/blueprint") { response ->
+            jsonObject(response, ResponseKey, BlueprintKey)?.let { f(it) }
+        }
 
     private fun JsonElement.toModule(): Module? =
-        this.jsonObject["id"]?.jsonPrimitive?.intOrNull?.let { moduleId ->
-            this.jsonObject["module"]?.jsonPrimitive?.content?.let { name ->
+        this.jsonObject[IdKey]?.jsonPrimitive?.intOrNull?.let { moduleId ->
+            this.jsonObject[ModuleKey]?.jsonPrimitive?.content?.let { name ->
                 Module(moduleId, name)
             }
         }
@@ -95,8 +111,8 @@ class MakeApiImpl(
             setBody(body.toString())
         }.toResult(f)
 
-    private suspend fun <T> patch(token: AuthToken, url: String, body: JsonObject, f: (JsonObject) -> T?): Result<T> =
-        httpClient.patch(url) {
+    private suspend fun <T> put(token: AuthToken, url: String, body: JsonObject, f: (JsonObject) -> T?): Result<T> =
+        httpClient.put(url) {
             setHeaders(token)
             setBody(body.toString())
         }.toResult(f)

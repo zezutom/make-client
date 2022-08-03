@@ -3,11 +3,14 @@ package com.tomaszezula.make.client.jvm
 import com.tomaszezula.make.client.jvm.model.Blueprint
 import com.tomaszezula.make.client.jvm.model.Blueprint.Module
 import com.tomaszezula.make.client.jvm.model.Blueprint.Module.Id
+import com.tomaszezula.make.client.jvm.model.Folder
 import com.tomaszezula.make.client.jvm.model.Scenario
+import com.tomaszezula.make.client.jvm.model.Team
 import com.tomaszezula.make.common.MakeApi
 import com.tomaszezula.make.common.MakeApiImpl
 import com.tomaszezula.make.common.config.MakeConfig
 import com.tomaszezula.make.common.model.AuthToken
+import com.tomaszezula.make.common.model.Scheduling
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import kotlinx.serialization.json.Json
@@ -31,6 +34,29 @@ class MakeClient(private val token: AuthToken, private val api: MakeApi) {
                 )
             )
     }
+
+    /**
+     * Creates a new scenario.
+     *
+     * @param teamId
+     * @param folderId
+     * @param blueprintJson
+     * @param scheduling
+     *
+     */
+    suspend fun createScenario(
+        teamId: Team.Id,
+        folderId: Folder.Id,
+        blueprintJson: Blueprint.Json,
+        scheduling: Scheduling
+    ): Result<Scenario> =
+        api.createScenario(
+            this.token,
+            teamId.value,
+            folderId.value,
+            blueprintJson.value, scheduling).map { response ->
+                Scenario(Scenario.Id(response.id))
+        }
 
     /**
      * Returns the scenario blueprint.

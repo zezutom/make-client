@@ -1,9 +1,6 @@
 package com.tomaszezula.make.common
 
-import com.tomaszezula.make.common.model.AuthToken
-import com.tomaszezula.make.common.model.Blueprint
-import com.tomaszezula.make.common.model.Scenario
-import com.tomaszezula.make.common.model.UpdateResult
+import com.tomaszezula.make.common.model.*
 
 /**
  * Accesses Make's fine-grained API.
@@ -17,7 +14,7 @@ interface MakeApi {
      * @param teamId
      * @param folderId
      * @param blueprintJson
-     * @param schedulingInterval
+     * @param scheduling
      *
      */
     suspend fun createScenario(
@@ -25,7 +22,7 @@ interface MakeApi {
         teamId: Int,
         folderId: Int,
         blueprintJson: String,
-        schedulingInterval: Int
+        scheduling: Scheduling
     ): Result<Scenario>
 
     /**
