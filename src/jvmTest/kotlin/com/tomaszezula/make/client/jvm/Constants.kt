@@ -1,0 +1,38 @@
+package com.tomaszezula.make.client.jvm
+
+val EmptyBlueprint =
+    """
+        {
+            "name": "New scenario",
+            "flow": [
+                {
+                    "id": null,
+                    "module": "placeholder:Placeholder",
+                    "metadata": {
+                        "designer": {
+                            "x": 0,
+                            "y": 0
+                        }
+                    }
+                }
+            ],
+            "metadata": {
+                "instant": false,
+                "version": 1,
+                "scenario": {
+                    "roundtrips": 1,
+                    "maxErrors": 3,
+                    "autoCommit": true,
+                    "autoCommitTriggerLast": true,
+                    "sequential": false,
+                    "confidential": false,
+                    "dataloss": false,
+                    "dlq": false
+                },
+                "designer": {
+                    "orphans": []
+                },
+                "zone": "eu1.make.com"
+            }
+        }
+    """.trimIndent()

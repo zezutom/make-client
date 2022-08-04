@@ -42,19 +42,23 @@ class MakeApiImpl(
         folderId: Int,
         blueprintJson: String,
         scheduling: Scheduling
-    ): Result<Scenario> =
-        post(token, createScenarioUrl, buildJsonObject {
-            put(BlueprintKey, blueprintJson.lineSequence().map { it.trim() }.joinToString(Separator))
-            put(SchedulingKey, scheduling.toJson())
-            put(FolderIdKey, folderId)
-            put(TeamIdKey, teamId)
-        }) { response ->
-            jsonObject(response, ResponseKey, ScenarioKey)?.let { scenario ->
-                scenario[IdKey]?.jsonPrimitive?.content?.let { id ->
-                    Scenario(id.toInt())
+    ): Result<Scenario> {
+        return scheduling.validate().map { validScheduling ->
+            post(token, createScenarioUrl, buildJsonObject {
+                put(BlueprintKey, blueprintJson.lineSequence().map { it.trim() }.joinToString(Separator))
+                put(SchedulingKey, validScheduling.toJson())
+                put(FolderIdKey, folderId)
+                put(TeamIdKey, teamId)
+            }) { response ->
+                jsonObject(response, ScenarioKey)?.let { scenario ->
+                    scenario[IdKey]?.jsonPrimitive?.content?.let { id ->
+                        Scenario(id.toInt())
+                    }
                 }
             }
-        }
+        }.getOrThrow()
+    }
+
 
     override suspend fun getBlueprint(token: AuthToken, scenarioId: Int): Result<Blueprint> =
         getBlueprintJson(token, scenarioId) { blueprint ->

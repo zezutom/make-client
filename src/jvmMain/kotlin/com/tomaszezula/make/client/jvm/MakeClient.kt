@@ -1,11 +1,7 @@
 package com.tomaszezula.make.client.jvm
 
-import com.tomaszezula.make.client.jvm.model.Blueprint
+import com.tomaszezula.make.client.jvm.model.*
 import com.tomaszezula.make.client.jvm.model.Blueprint.Module
-import com.tomaszezula.make.client.jvm.model.Blueprint.Module.Id
-import com.tomaszezula.make.client.jvm.model.Folder
-import com.tomaszezula.make.client.jvm.model.Scenario
-import com.tomaszezula.make.client.jvm.model.Team
 import com.tomaszezula.make.common.MakeApi
 import com.tomaszezula.make.common.MakeApiImpl
 import com.tomaszezula.make.common.config.MakeConfig
@@ -54,8 +50,10 @@ class MakeClient(private val token: AuthToken, private val api: MakeApi) {
             this.token,
             teamId.value,
             folderId.value,
-            blueprintJson.value, scheduling).map { response ->
-                Scenario(Scenario.Id(response.id))
+            blueprintJson.value,
+            scheduling
+        ).map { response ->
+            Scenario(Scenario.Id(response.id))
         }
 
     /**
@@ -73,6 +71,25 @@ class MakeClient(private val token: AuthToken, private val api: MakeApi) {
             )
         }
 
+    /**
+     * Sets the user defined data of an arbitrary module within the provided scenario.
+     *
+     * @param scenarioId
+     * @param moduleId
+     * @param fieldName Determines the updated field.
+     * @param data
+     *
+     */
+    suspend fun setModuleData(
+        scenarioId: Scenario.Id,
+        moduleId: Module.Id,
+        fieldName: String,
+        data: Any
+    ): Result<UpdateResult> =
+        api.setModuleData(this.token, scenarioId.value, moduleId.value, fieldName, data).map {
+            UpdateResult(it.value)
+        }
+
     private fun com.tomaszezula.make.common.model.Blueprint.Module.toModel(): Module =
-        Module(Id(this.id), this.name)
+        Module(Module.Id(this.id), this.name)
 }
