@@ -1,5 +1,12 @@
 package com.tomaszezula.make.client.jvm
 
+import com.tomaszezula.make.common.MakeApiImpl
+import com.tomaszezula.make.common.config.MakeConfig
+import com.tomaszezula.make.common.model.AuthToken
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import kotlinx.serialization.json.Json
+
 val EmptyBlueprint =
     """
         {
@@ -36,3 +43,14 @@ val EmptyBlueprint =
             }
         }
     """.trimIndent()
+
+val client = MakeClient(
+    AuthToken("REPLACE WITH YOUR OWN TOKEN"),
+    MakeApiImpl(
+        MakeConfig.eu(),
+        HttpClient(CIO),
+        Json {
+            ignoreUnknownKeys = true
+        }
+    )
+)
