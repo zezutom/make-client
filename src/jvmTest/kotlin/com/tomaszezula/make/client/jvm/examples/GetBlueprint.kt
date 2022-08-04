@@ -6,7 +6,7 @@ import kotlinx.coroutines.runBlocking
 
 fun main() {
     runBlocking {
-        client.getBlueprint(Scenario.Id(392961))
+        client.getBlueprint(Scenario.Id(392961))    // Replace with your own scenario id
             .onSuccess { blueprint ->
                 println(blueprint)
             }
